@@ -1,66 +1,95 @@
+import sys
 import cv2
 from datetime import datetime
-from simple_facerec import SimpleFacerec 
+from simple_facerec import SimpleFacerec
+from PyQt5.uic import loadUi
+from PyQt5.QtCore import pyqtSlot, QTimer, QDate 
+from PyQt5.QtWidgets import QApplication, QMainWindow, QMessageBox
 
-from PySide2 import QtWidgets 
-from PySide2.QtUiTools import QUiLoader 
+class FaceRegconition(QMainWindow):
+    def __init__(self):
+        super(FaceRegconition, self).__init__()
+        loadUi('./main.ui', self)
+        current = QDate.currentDate()
+        
+        currentDate = current.toString('dd MM yyyy')
+        currentTime = datetime.now().strftime('%I:%M:%p')
+        
+        self.dateLabel.setText(currentDate)
+        self.timeLabel.setText(currentTime)
+        self.image = None
 
-loader = QUiLoader()
-app = QtWidgets.QApplication([])
-window = loader .load('main.ui', None)
-window.show()
-app.exec_()
+        #encode faces from a folder
+        self.sfr = SimpleFacerec()
+        self.sfr.load_encoding_images("images/")
 
-#encode faces from a folder
-sfr = SimpleFacerec()
-sfr.load_encoding_images("images/")
+        self.camera = cv2.VideoCapture(0)
+        if not self.camera.isOpened():
+            print("Cannot open camera")
+            sys.exit()
 
-camera = cv2.VideoCapture(0)
-if not camera.isOpened():
-    print("Cannot open camera")
-    exit()
+        #start video capture
+        self.timer = QTimer(self)
+        self.timer.timeout.connect(self.video)
+        self.timer.start(30)
 
-while True:
-    ret, frame = camera.read()
+    @pyqtSlot() 
+    def video(self):
+        ret, frame = self.camera.read()
 
-    #check if the frame is empty
-    if not ret:
-        print("Error: Could not read frame from camera")
-        break
+        #check if the frame is empty
+        if not ret:
+            print("Error: Could not read frame from camera")
+            return
 
-    #detect Faces
-    face_locations, face_names = sfr.detect_known_faces(frame)
+        #detect Faces
+        face_locations, face_names = self.sfr.detect_known_faces(frame)
 
-    #draw boxes around detected faces and write their names
-    for face_loc, name in zip(face_locations, face_names):
-        y1, x2, y2, x1 = face_loc[0], face_loc[1], face_loc[2], face_loc[3]
-        cv2.putText(frame, name, (x1, y1), cv2.FONT_HERSHEY_COMPLEX, 1, (0, 0, 0), 2)
-        cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 0, 200), 4)
-    #print frame size
-    print(frame.shape)
+        #draw boxes around detected faces and write their names
+        for face_loc, name in zip(face_locations, face_names):
+            y1, x2, y2, x1 = face_loc[0], face_loc[1], face_loc[2], face_loc[3]
+            cv2.putText(frame, name, (x1, y1), cv2.FONT_HERSHEY_COMPLEX, 1, (0, 0, 0), 2)
+            cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 0, 200), 4)
+            self.attendance(name)
+
+        #print frame size
+        print(frame.shape)
+        
+        #display the resulting frame
+        cv2.imshow("Face Regconition", frame)
+        key = cv2.waitKey(1)
+
+        #exit on ESC key press
+        if key == 27:
+            self.camera.release()
+            cv2.destroyAllWindows()
+            sys.exit()
+
+    @pyqtSlot(str)
+    def attendance(self, name):
+        with open('attendance.csv', 'r+') as f:
+            data = f.readlines()
+            nameList = []
+            for line in data:
+                entry = line.split('-')
+                nameList.append(entry[0])
+            if name not in nameList:
+                now = datetime.now()
+                dtString = now.strftime('%H:%M:%S')
+                f.writelines(f'\n{name}, {dtString}')
+            print(data)
+        self.attendance(name)
+
     
-    #display the resulting frame
-    cv2.imshow("Face Regconition", frame)
-    key = cv2.waitKey(1)
+app = QApplication(sys.argv)
+mainWindow = FaceRegconition()
 
-    #exit on ESC key press
-    if key == 27:
-        break
+#start video capture
+timer = QTimer(mainWindow)
+timer.timeout.connect(mainWindow.video)
+timer.start(30)
 
-def attendance(name):
-    with open('attendance.csv', 'r+')as f:
-        data = f.readlines()
-        nameList = []
-        for line in data:
-            entry = line.split('-')
-            nameList.append(entry[0])
-        if name not in nameList:
-            now = datetime.now()
-            dtString = now.strftime('%H:%M:%S')
-            f.writelines(f'\n{name}, {dtString}')
-        print(data) 
-attendance(name)
-    
-camera.release()
-cv2.destroyAllWindows()
+mainWindow.show()
+sys.exit(app.exec_())
+
     
