@@ -1,0 +1,21 @@
+from PyQt5 import QtWidgets 
+from PyQt5.QtWidgets import QApplication, QMainWindow
+import sys 
+
+class MyWindow(QMainWindow):
+    def __init__(self) -> None:
+        super().__init__()
+        
+def window():
+    app = QApplication(sys.argv)
+    window = QMainWindow()
+    window.setGeometry(200, 200, 400, 400)
+    window.setWindowTitle("Face Regconition")
+    
+    label =  QtWidgets.QLabel(window)
+    label.setText("Face Regconition")
+    label.move(100, 100)
+    
+    window.show()
+    sys.exit(app.exec_())
+window()
