@@ -14,7 +14,7 @@
    <string>Face Regconition</string>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <widget class="QLabel" name="label">
+   <widget class="QLabel" name="videoLabel">
     <property name="geometry">
      <rect>
       <x>40</x>

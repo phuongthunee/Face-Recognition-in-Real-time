@@ -4,7 +4,8 @@ from datetime import datetime
 from simple_facerec import SimpleFacerec
 from PyQt5.uic import loadUi
 from PyQt5.QtCore import pyqtSlot, QTimer, QDate 
-from PyQt5.QtWidgets import QApplication, QMainWindow, QMessageBox
+from PyQt5.QtWidgets import QMainWindow, QApplication, QLabel, QFrame
+from PyQt5.QtGui import QPixmap, QImage
 
 class FaceRegconition(QMainWindow):
     def __init__(self):
@@ -12,7 +13,7 @@ class FaceRegconition(QMainWindow):
         loadUi('./main.ui', self)
         current = QDate.currentDate()
         
-        currentDate = current.toString('dd MM yyyy')
+        currentDate = current.toString('dd/MM/yyyy')
         currentTime = datetime.now().strftime('%I:%M:%p')
         
         self.dateLabel.setText(currentDate)
@@ -55,8 +56,16 @@ class FaceRegconition(QMainWindow):
         #print frame size
         print(frame.shape)
         
+        #convert frame to pixmap and set as label image
+        rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        h, w, ch = rgb_frame.shape
+        bytesPerLine = ch * w
+        qImg = QImage(rgb_frame.data, w, h, bytesPerLine, QImage.Format_RGB888)
+        pixmap = QPixmap.fromImage(qImg)
+        self.videoLabel.setPixmap(pixmap)
+        
         #display the resulting frame
-        cv2.imshow("Face Regconition", frame)
+        #cv2.imshow("Face Regconition", frame)
         key = cv2.waitKey(1)
 
         #exit on ESC key press
@@ -91,5 +100,7 @@ timer.start(30)
 
 mainWindow.show()
 sys.exit(app.exec_())
+
+
 
     
