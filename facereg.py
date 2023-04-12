@@ -87,8 +87,6 @@ class FaceRegconition(QMainWindow):
                 dtString = now.strftime('%H:%M:%S')
                 f.writelines(f'\n{name}, {dtString}')
             print(data)
-        self.attendance(name)
-
     
 app = QApplication(sys.argv)
 mainWindow = FaceRegconition()
@@ -100,7 +98,3 @@ timer.start(30)
 
 mainWindow.show()
 sys.exit(app.exec_())
-
-
-
-    
