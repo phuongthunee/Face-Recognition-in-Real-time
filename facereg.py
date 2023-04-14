@@ -3,8 +3,8 @@ import cv2
 from datetime import datetime
 from simple_facerec import SimpleFacerec
 from PyQt5.uic import loadUi
-from PyQt5.QtCore import pyqtSlot, QTimer, QDate 
-from PyQt5.QtWidgets import QMainWindow, QApplication, QLabel, QFrame
+from PyQt5.QtCore import pyqtSlot, QTimer, QDate, QTime 
+from PyQt5.QtWidgets import QMainWindow, QApplication
 from PyQt5.QtGui import QPixmap, QImage
 
 class FaceRegconition(QMainWindow):
@@ -14,16 +14,23 @@ class FaceRegconition(QMainWindow):
         current = QDate.currentDate()
         
         currentDate = current.toString('dd/MM/yyyy')
-        currentTime = datetime.now().strftime('%I:%M:%p')
+        currentTime = datetime.now().strftime('%H:%M:%S')
+        #currentName = 
         
         self.dateLabel.setText(currentDate)
         self.timeLabel.setText(currentTime)
-        self.image = None
+        #self.nameLabel.setText(currentName)
+        
+        self.timer = QTimer(self)
+        self.timer.timeout.connect(self.update_time)
+        self.timer.start(1000) #the timer is started with an interval of 1000 ms (1 second) to update the time label every second
 
         #encode faces from a folder
+        self.image = None
         self.sfr = SimpleFacerec()
         self.sfr.load_encoding_images("images/")
 
+        #webcam
         self.camera = cv2.VideoCapture(0)
         if not self.camera.isOpened():
             print("Cannot open camera")
@@ -52,9 +59,6 @@ class FaceRegconition(QMainWindow):
             cv2.putText(frame, name, (x1, y1), cv2.FONT_HERSHEY_COMPLEX, 1, (0, 0, 0), 2)
             cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 0, 200), 4)
             self.attendance(name)
-
-        #print frame size
-        print(frame.shape)
         
         #convert frame to pixmap and set as label image
         rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
@@ -65,9 +69,7 @@ class FaceRegconition(QMainWindow):
         self.videoLabel.setPixmap(pixmap)
         
         #display the resulting frame
-        #cv2.imshow("Face Regconition", frame)
         key = cv2.waitKey(1)
-
         #exit on ESC key press
         if key == 27:
             self.camera.release()
@@ -87,7 +89,16 @@ class FaceRegconition(QMainWindow):
                 dtString = now.strftime('%H:%M:%S')
                 f.writelines(f'\n{name}, {dtString}')
             print(data)
-    
+
+    @pyqtSlot() 
+    def update_time(self):
+        current_time = QTime.currentTime()
+        current_date = QDate.currentDate()
+        time_str = current_time.toString('hh:mm:ss')
+        date_str = current_date.toString('dd/MM/yyyy')
+        self.timeLabel.setText(time_str)
+        self.dateLabel.setText(date_str) 
+        
 app = QApplication(sys.argv)
 mainWindow = FaceRegconition()
 
