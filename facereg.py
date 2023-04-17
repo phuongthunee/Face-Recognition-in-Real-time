@@ -3,14 +3,15 @@ import cv2
 from datetime import datetime
 from simple_facerec import SimpleFacerec
 from PyQt5.uic import loadUi
-from PyQt5.QtCore import pyqtSlot, QTimer, QDate, QTime 
-from PyQt5.QtWidgets import QMainWindow, QApplication
+from PyQt5.QtCore import pyqtSlot, QTimer, QDate, QTime
+from PyQt5.QtWidgets import QMainWindow, QApplication, QWidget, QLabel, QMessageBox, QPushButton
 from PyQt5.QtGui import QPixmap, QImage
+from GUI.main import Ui_FaceRecognition
 
-class FaceRegconition(QMainWindow):
+class FaceRecognition(QMainWindow, Ui_FaceRecognition):
     def __init__(self):
-        super(FaceRegconition, self).__init__()
-        loadUi('./main.ui', self)
+        super(FaceRecognition, self).__init__()
+        self.setupUi(self)
         current = QDate.currentDate()
         
         currentDate = current.toString('dd/MM/yyyy')
@@ -28,19 +29,19 @@ class FaceRegconition(QMainWindow):
         #encode faces from a folder
         self.image = None
         self.sfr = SimpleFacerec()
-        self.sfr.load_encoding_images("images/")
-
+        self.sfr.load_encoding_images('images/')
+        
         #webcam
         self.camera = cv2.VideoCapture(0)
         if not self.camera.isOpened():
             print("Cannot open camera")
             sys.exit()
-
+        
         #start video capture
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.video)
-        self.timer.start(30)
-
+        self.timer.start(30) #fps = 30
+        
     @pyqtSlot() 
     def video(self):
         ret, frame = self.camera.read()
@@ -50,6 +51,9 @@ class FaceRegconition(QMainWindow):
             print("Error: Could not read frame from camera")
             return
 
+        #resize
+        #resized_frame = cv2.resize(frame, (0, 0), fx = 0.25, fy = 0.25)
+        
         #detect Faces
         face_locations, face_names = self.sfr.detect_known_faces(frame)
 
@@ -88,7 +92,7 @@ class FaceRegconition(QMainWindow):
                 now = datetime.now()
                 dtString = now.strftime('%H:%M:%S')
                 f.writelines(f'\n{name}, {dtString}')
-            print(data)
+                QMessageBox.information(self, 'Attendance', f'{name} has been marked as present!')
 
     @pyqtSlot() 
     def update_time(self):
@@ -98,9 +102,9 @@ class FaceRegconition(QMainWindow):
         date_str = current_date.toString('dd/MM/yyyy')
         self.timeLabel.setText(time_str)
         self.dateLabel.setText(date_str) 
-        
+         
 app = QApplication(sys.argv)
-mainWindow = FaceRegconition()
+mainWindow = FaceRecognition()
 
 #start video capture
 timer = QTimer(mainWindow)
