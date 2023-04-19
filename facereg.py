@@ -26,6 +26,8 @@ class FaceRecognition(QMainWindow, Ui_FaceRecognition):
         self.timer.timeout.connect(self.update_time)
         self.timer.start(1000) #the timer is started with an interval of 1000 ms (1 second) to update the time label every second
 
+        self.face_detected = False #stop the infinite loop
+        
         #encode faces from a folder
         self.image = None
         self.sfr = detectFaces()
@@ -51,16 +53,22 @@ class FaceRecognition(QMainWindow, Ui_FaceRecognition):
             print("Error: Could not read frame from camera")
             return
         
-        #detect Faces
+        if self.face_detected:
+            return
+        
+        #detect faces
         face_locations, face_names = self.sfr.detect_known_faces(frame)
 
         #draw boxes around detected faces and write their names
         for face_loc, name in zip(face_locations, face_names):
             y1, x2, y2, x1 = face_loc[0], face_loc[1], face_loc[2], face_loc[3]
-            cv2.putText(frame, name, (x1, y1), cv2.FONT_HERSHEY_COMPLEX, 1, (170, 255, 0), 2)
-            cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 0, 200), 4)
+            cv2.putText(frame, name, (x1, y1), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+            cv2.rectangle(frame, (x1, y1), (x2, y2), (128, 206, 49), 4)
             self.attendance(name)
-            self.show_information_window(name)
+            now = datetime.now().strftime('%H:%M:%S')
+            self.show_information_window(name, frame[y1:y2, x1:x2], now)
+            self.face_detected = True
+            break
         
         #convert frame to pixmap and set as label image
         rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
@@ -99,16 +107,17 @@ class FaceRecognition(QMainWindow, Ui_FaceRecognition):
         date_str = current_date.toString('dd/MM/yyyy')
         self.timeLabel.setText(time_str)
         self.dateLabel.setText(date_str) 
-         
-    def show_information_window(self, name):
-        self.info_window = Information(name)
+    
+    def show_information_window(self, name, image, timeIn):
+        self.info_window = Information(name, image, timeIn)
         self.info_window.show()
              
 class Information(QMainWindow, Ui_Information):
-    def __init__(self, name):
+    def __init__(self, name, image, timeIn):
         super(Information, self).__init__()
         self.setupUi(self)
         self.nameLabel.setText(name)
+        self.timeInLabel.setText(timeIn)
                       
 app = QApplication(sys.argv)
 mainWindow = FaceRecognition()
