@@ -1,12 +1,12 @@
 import sys
 import cv2
 from datetime import datetime
-from simple_facerec import SimpleFacerec
-from PyQt5.uic import loadUi
+from detect_faces import detectFaces
 from PyQt5.QtCore import pyqtSlot, QTimer, QDate, QTime
-from PyQt5.QtWidgets import QMainWindow, QApplication, QWidget, QLabel, QMessageBox, QPushButton
+from PyQt5.QtWidgets import QMainWindow, QApplication
 from PyQt5.QtGui import QPixmap, QImage
 from GUI.main import Ui_FaceRecognition
+from GUI.information import Ui_Information
 
 class FaceRecognition(QMainWindow, Ui_FaceRecognition):
     def __init__(self):
@@ -28,7 +28,7 @@ class FaceRecognition(QMainWindow, Ui_FaceRecognition):
 
         #encode faces from a folder
         self.image = None
-        self.sfr = SimpleFacerec()
+        self.sfr = detectFaces()
         self.sfr.load_encoding_images('images/')
         
         #webcam
@@ -50,9 +50,6 @@ class FaceRecognition(QMainWindow, Ui_FaceRecognition):
         if not ret:
             print("Error: Could not read frame from camera")
             return
-
-        #resize
-        #resized_frame = cv2.resize(frame, (0, 0), fx = 0.25, fy = 0.25)
         
         #detect Faces
         face_locations, face_names = self.sfr.detect_known_faces(frame)
@@ -60,9 +57,10 @@ class FaceRecognition(QMainWindow, Ui_FaceRecognition):
         #draw boxes around detected faces and write their names
         for face_loc, name in zip(face_locations, face_names):
             y1, x2, y2, x1 = face_loc[0], face_loc[1], face_loc[2], face_loc[3]
-            cv2.putText(frame, name, (x1, y1), cv2.FONT_HERSHEY_COMPLEX, 1, (0, 0, 0), 2)
+            cv2.putText(frame, name, (x1, y1), cv2.FONT_HERSHEY_COMPLEX, 1, (170, 255, 0), 2)
             cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 0, 200), 4)
             self.attendance(name)
+            self.show_information_window(name)
         
         #convert frame to pixmap and set as label image
         rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
@@ -92,7 +90,6 @@ class FaceRecognition(QMainWindow, Ui_FaceRecognition):
                 now = datetime.now()
                 dtString = now.strftime('%H:%M:%S')
                 f.writelines(f'\n{name}, {dtString}')
-                QMessageBox.information(self, 'Attendance', f'{name} has been marked as present!')
 
     @pyqtSlot() 
     def update_time(self):
@@ -103,6 +100,16 @@ class FaceRecognition(QMainWindow, Ui_FaceRecognition):
         self.timeLabel.setText(time_str)
         self.dateLabel.setText(date_str) 
          
+    def show_information_window(self, name):
+        self.info_window = Information(name)
+        self.info_window.show()
+             
+class Information(QMainWindow, Ui_Information):
+    def __init__(self, name):
+        super(Information, self).__init__()
+        self.setupUi(self)
+        self.nameLabel.setText(name)
+                      
 app = QApplication(sys.argv)
 mainWindow = FaceRecognition()
 

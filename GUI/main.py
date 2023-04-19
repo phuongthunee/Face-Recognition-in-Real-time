@@ -56,11 +56,6 @@ class Ui_FaceRecognition(object):
         self.timeLabel.setObjectName("timeLabel")
         self.horizontalLayout_3.addWidget(self.timeLabel)
         self.clock.addLayout(self.horizontalLayout_3, 2, 0, 1, 1)
-        self.details = QtWidgets.QPushButton(self.centralwidget, clicked = lambda: self.changeWindow())
-        self.details.clicked.connect(self.changeWindow)
-        self.details.setGeometry(QtCore.QRect(680, 140, 100, 50))
-        self.details.setMinimumSize(QtCore.QSize(100, 50))
-        self.details.setObjectName("details")
         FaceRecognition.setCentralWidget(self.centralwidget)
         self.menubar = QtWidgets.QMenuBar(FaceRecognition)
         self.menubar.setGeometry(QtCore.QRect(0, 0, 1000, 18))
@@ -75,12 +70,10 @@ class Ui_FaceRecognition(object):
 
     def retranslateUi(self, FaceRecognition):
         _translate = QtCore.QCoreApplication.translate
-        FaceRecognition.setWindowTitle(_translate("FaceRecognition", "Face FaceRecognition"))
+        FaceRecognition.setWindowTitle(_translate("FaceRecognition", "Face Recognition"))
         self.videoLabel.setText(_translate("FaceRecognition", "webcam"))
         self.date.setText(_translate("FaceRecognition", "Date:"))
         self.time.setText(_translate("FaceRecognition", "Time:"))
-        self.details.setText(_translate("FaceRecognition", "Details"))
-
 
 if __name__ == "__main__":
     import sys
