@@ -120,7 +120,7 @@ class Information(QMainWindow, Ui_Information):
         if os.path.exists(image):
             raw_image = cv2.imread(image)
             h, w, ch = raw_image.shape
-            qImg = QImage(raw_image.data, w, h, ch * w, QImage.Format_RGB888)
+            qImg = QImage(raw_image.data, w, h, ch * w, QImage.Format_BGR888)
             image = QPixmap.fromImage(qImg)
         else:
             #fall back to the thumbnail image
@@ -128,7 +128,7 @@ class Information(QMainWindow, Ui_Information):
             raw_image = cv2.imread(image)
             h, w, ch = raw_image.shape
             bytesPerLine = ch * w
-            qImg = QImage(raw_image.data, w, h, bytesPerLine, QImage.Format_RGB888)
+            qImg = QImage(raw_image.data, w, h, bytesPerLine, QImage.Format_BGR888)
             image = QPixmap.fromImage(qImg)
         self.imageLabel.setPixmap(image) #show the raw image
         self.imageLabel.setPixmap(image.scaled(self.imageLabel.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation))
