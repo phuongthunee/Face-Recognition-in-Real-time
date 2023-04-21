@@ -3,7 +3,7 @@ import cv2
 import os
 from datetime import datetime
 from detect_faces import detectFaces
-from PyQt5.QtCore import pyqtSlot, QTimer, QDate, QTime
+from PyQt5.QtCore import pyqtSlot, QTimer, QDate, QTime, Qt
 from PyQt5.QtWidgets import QMainWindow, QApplication
 from PyQt5.QtGui import QPixmap, QImage
 from GUI.main import Ui_FaceRecognition
@@ -117,15 +117,22 @@ class Information(QMainWindow, Ui_Information):
         self.setupUi(self)
         self.nameLabel.setText(name)
         
-        image_path = os.path.join('images', f'{name}.jpg')
-        if os.path.exists(image_path):
-            raw_image = cv2.imread(image_path)
+        if os.path.exists(image):
+            raw_image = cv2.imread(image)
+            h, w, ch = raw_image.shape
+            qImg = QImage(raw_image.data, w, h, ch * w, QImage.Format_RGB888)
+            image = QPixmap.fromImage(qImg)
+        else:
+            #fall back to the thumbnail image
+            image = os.path.join('images', f'{name}.jpg')
+            raw_image = cv2.imread(image)
             h, w, ch = raw_image.shape
             bytesPerLine = ch * w
             qImg = QImage(raw_image.data, w, h, bytesPerLine, QImage.Format_RGB888)
             image = QPixmap.fromImage(qImg)
-            self.imageLabel.setPixmap(image) #show the raw image
-        
+        self.imageLabel.setPixmap(image) #show the raw image
+        self.imageLabel.setPixmap(image.scaled(self.imageLabel.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation))
+            
         self.timeInLabel.setText(timeIn)
                       
 app = QApplication(sys.argv)
