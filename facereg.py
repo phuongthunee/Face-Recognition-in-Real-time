@@ -1,5 +1,6 @@
 import sys
 import cv2
+import os
 from datetime import datetime
 from detect_faces import detectFaces
 from PyQt5.QtCore import pyqtSlot, QTimer, QDate, QTime
@@ -16,11 +17,9 @@ class FaceRecognition(QMainWindow, Ui_FaceRecognition):
         
         currentDate = current.toString('dd/MM/yyyy')
         currentTime = datetime.now().strftime('%H:%M:%S')
-        #currentName = 
         
         self.dateLabel.setText(currentDate)
         self.timeLabel.setText(currentTime)
-        #self.nameLabel.setText(currentName)
         
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.update_time)
@@ -108,15 +107,25 @@ class FaceRecognition(QMainWindow, Ui_FaceRecognition):
         self.timeLabel.setText(time_str)
         self.dateLabel.setText(date_str) 
     
-    def show_information_window(self, name, image, timeIn):
+    def show_information_window(self, name, image, timeIn):         
         self.info_window = Information(name, image, timeIn)
         self.info_window.show()
-             
+                    
 class Information(QMainWindow, Ui_Information):
     def __init__(self, name, image, timeIn):
         super(Information, self).__init__()
         self.setupUi(self)
         self.nameLabel.setText(name)
+        
+        image_path = os.path.join('images', f'{name}.jpg')
+        if os.path.exists(image_path):
+            raw_image = cv2.imread(image_path)
+            h, w, ch = raw_image.shape
+            bytesPerLine = ch * w
+            qImg = QImage(raw_image.data, w, h, bytesPerLine, QImage.Format_RGB888)
+            image = QPixmap.fromImage(qImg)
+            self.imageLabel.setPixmap(image) #show the raw image
+        
         self.timeInLabel.setText(timeIn)
                       
 app = QApplication(sys.argv)
