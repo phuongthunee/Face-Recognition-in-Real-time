@@ -124,7 +124,7 @@ class Information(QMainWindow, Ui_Information):
             image = QPixmap.fromImage(qImg)
         else:
             #fall back to the thumbnail image
-            image = os.path.join('images', f'{name}.jpg')
+            image = os.path.join('images/', f'{name}.jpg')
             raw_image = cv2.imread(image)
             h, w, ch = raw_image.shape
             bytesPerLine = ch * w
