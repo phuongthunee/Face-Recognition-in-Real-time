@@ -120,6 +120,7 @@ class FaceRecognition(QMainWindow, Ui_FaceRecognition):
         self.info_window.setAttribute(Qt.WA_DeleteOnClose)
         self.info_window.show()
         self.info_window.closeEvent = lambda event: self.return_face_detected()
+        self.face_detected = True                        
                         
 class Information(QMainWindow, Ui_Information):
     def __init__(self, name, image, timeIn):
