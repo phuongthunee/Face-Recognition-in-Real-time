@@ -137,10 +137,15 @@ class Information(QMainWindow, Ui_Information):
             #fall back to the thumbnail image
             image = os.path.join('images/', f'{name}.jpg')
             raw_image = cv2.imread(image)
-            h, w, ch = raw_image.shape
-            bytesPerLine = ch * w
-            qImg = QImage(raw_image.data, w, h, bytesPerLine, QImage.Format_BGR888)
-            image = QPixmap.fromImage(qImg)
+            if raw_image is None:
+                print("Failed to load image")
+                image = QPixmap()
+            else:    
+                h, w, ch = raw_image.shape
+                print(f"Image dimensions: {h} x {w} x {ch}")
+                bytesPerLine = ch * w
+                qImg = QImage(raw_image.data, w, h, bytesPerLine, QImage.Format_BGR888)
+                image = QPixmap.fromImage(qImg)
         self.imageLabel.setPixmap(image.scaled(self.imageLabel.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation))
             
         self.timeInLabel.setText(timeIn)                              
