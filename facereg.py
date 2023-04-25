@@ -3,7 +3,7 @@ import cv2
 import os
 from datetime import datetime
 from detect_faces import detectFaces
-from PyQt5.QtCore import pyqtSlot, QTimer, QDate, QTime, Qt
+from PyQt5.QtCore import pyqtSlot, pyqtSignal, QTimer, QDate, QTime, Qt
 from PyQt5.QtWidgets import QMainWindow, QApplication
 from PyQt5.QtGui import QPixmap, QImage
 from GUI.main import Ui_FaceRecognition
@@ -46,7 +46,11 @@ class FaceRecognition(QMainWindow, Ui_FaceRecognition):
     @pyqtSlot() 
     def video(self):
         ret, frame = self.camera.read()
-
+        
+        #split the frame into individual color channels
+        b, g, r = cv2.split(frame)
+        #merge the channels back together
+        frame = cv2.merge((b, g, r))
         #check if the frame is empty
         if not ret:
             print("Error: Could not read frame from camera")
@@ -107,10 +111,16 @@ class FaceRecognition(QMainWindow, Ui_FaceRecognition):
         self.timeLabel.setText(time_str)
         self.dateLabel.setText(date_str) 
     
+    @pyqtSlot()
+    def return_face_detected(self):
+        self.face_detected = False
+
     def show_information_window(self, name, image, timeIn):         
         self.info_window = Information(name, image, timeIn)
+        self.info_window.setAttribute(Qt.WA_DeleteOnClose)
         self.info_window.show()
-                    
+        self.info_window.closeEvent = lambda event: self.return_face_detected()
+                        
 class Information(QMainWindow, Ui_Information):
     def __init__(self, name, image, timeIn):
         super(Information, self).__init__()
@@ -130,10 +140,9 @@ class Information(QMainWindow, Ui_Information):
             bytesPerLine = ch * w
             qImg = QImage(raw_image.data, w, h, bytesPerLine, QImage.Format_BGR888)
             image = QPixmap.fromImage(qImg)
-        self.imageLabel.setPixmap(image) #show the raw image
         self.imageLabel.setPixmap(image.scaled(self.imageLabel.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation))
             
-        self.timeInLabel.setText(timeIn)
+        self.timeInLabel.setText(timeIn)                              
                       
 app = QApplication(sys.argv)
 mainWindow = FaceRecognition()
