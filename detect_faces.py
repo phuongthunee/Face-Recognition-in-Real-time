@@ -46,9 +46,10 @@ class detectFaces:
         face_encodings = face_recognition.face_encodings(rgb_small_frame, face_locations)
 
         face_names = []
+        threshold = 0.5
         for face_encoding in face_encodings:
             #see if the face is a match for the known face(s)
-            matches = face_recognition.compare_faces(self.known_face_encodings, face_encoding)
+            matches = face_recognition.compare_faces(self.known_face_encodings, face_encoding, tolerance = threshold)
             name = "Unknown"
 
             #or instead, use the known face with the smallest distance to the new face
