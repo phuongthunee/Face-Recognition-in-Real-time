@@ -12,6 +12,12 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 
 
 class Ui_Information(object):
+    def __init__(self):
+        super().__init__()
+        self.timer = QtCore.QTimer(self)
+        self.timer.timeout.connect(self.close)
+        self.timer.start(5000)  
+    
     def setupUi(self, Information):
         Information.setObjectName("Information")
         Information.resize(465, 342)
@@ -46,8 +52,13 @@ class Ui_Information(object):
         self.horizontalLayout_2.addWidget(self.timeInLabel)
         self.information.addLayout(self.horizontalLayout_2, 1, 0, 1, 1)
         self.imageLabel = QtWidgets.QLabel(self.centralwidget)
-        self.imageLabel.setGeometry(QtCore.QRect(180, 70, 121, 131))
+        self.imageLabel.setGeometry(QtCore.QRect(130, 30, 221, 171))
+        self.imageLabel.setAlignment(QtCore.Qt.AlignCenter)
         self.imageLabel.setObjectName("imageLabel")
+        self.countdownLabel = QtWidgets.QLabel(self.centralwidget)
+        self.countdownLabel.setGeometry(QtCore.QRect(210, 10, 51, 16))
+        self.countdownLabel.setText("")
+        self.countdownLabel.setObjectName("countdownLabel")
         Information.setCentralWidget(self.centralwidget)
         self.menubar = QtWidgets.QMenuBar(Information)
         self.menubar.setGeometry(QtCore.QRect(0, 0, 465, 18))
