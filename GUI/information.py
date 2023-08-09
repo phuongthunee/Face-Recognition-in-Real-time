@@ -9,17 +9,11 @@
 from PyQt5 import QtCore, QtGui, QtWidgets
 
 class Ui_Information(object):
-    def __init__(self):
-        super().__init__()
-        self.timer = QtCore.QTimer(self)
-        self.timer.timeout.connect(self.close)
-        self.timer.start(5000) 
-        
     def setupUi(self, Information):
         Information.setObjectName("Information")
         Information.setWindowModality(QtCore.Qt.NonModal)
         Information.setEnabled(True)
-        Information.resize(394, 291)
+        Information.resize(532, 291)
         self.horizontalLayout = QtWidgets.QHBoxLayout(Information)
         self.horizontalLayout.setContentsMargins(11, 11, 11, 11)
         self.horizontalLayout.setSpacing(6)
@@ -29,12 +23,6 @@ class Ui_Information(object):
         self.verticalLayout.setObjectName("verticalLayout")
         self.imageLabel = QtWidgets.QLabel(Information)
         self.imageLabel.setEnabled(True)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Maximum, QtWidgets.QSizePolicy.Maximum)
-        sizePolicy.setHorizontalStretch(0)
-        sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.imageLabel.sizePolicy().hasHeightForWidth())
-        self.imageLabel.setSizePolicy(sizePolicy)
-        self.imageLabel.setMinimumSize(QtCore.QSize(200, 200))
         font = QtGui.QFont()
         font.setFamily("STXinwei")
         font.setPointSize(14)
@@ -82,7 +70,6 @@ class Ui_Information(object):
         self.return_bt.setObjectName("return_bt")
         self.horizontalLayout_2.addWidget(self.return_bt)
         self.close_bt = QtWidgets.QPushButton(Information)
-        self.close_bt.clicked.connect(self.close)
         font = QtGui.QFont()
         font.setFamily("STXinwei")
         font.setPointSize(20)

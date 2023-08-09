@@ -32,16 +32,20 @@ VERIFICATION_THRESHOLD = float(conf.get("MOBILEFACENET", "VERIFICATION_THRESHOLD
 FACE_DB_PATH = conf.get("MOBILEFACENET", "FACE_DB_PATH")
 
 def draw_rect(faces, landmarks, names, sims, image):
+    parent_data_names = []  # Store parent_data_name for each face
     for i, face in enumerate(faces):
         if names[i] == "unknown":
-            label = "{}".format(names[i])
+            parent_data_name = names[i]  # Assuming names[i] contains the parent_data_name
         else:
             employee_info = connect_DB.getEmployee(names[i])
             if employee_info is not None:
-                label = "{}".format(employee_info["name"])
+                parent_data_name = employee_info["name"]
             else:
-                label = "Unknown"
-        size = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 1, 2)[0]
+                parent_data_name = "Unknown"
+
+        parent_data_names.append(parent_data_name)  # Store the parent_data_name for each face
+
+        size = cv2.getTextSize(parent_data_name, cv2.FONT_HERSHEY_SIMPLEX, 1, 2)[0]
         x, y = int(face[0]), int(face[1])
 
         # Draw rectangle around the face
@@ -49,7 +53,9 @@ def draw_rect(faces, landmarks, names, sims, image):
         cv2.rectangle(image, (x1, y1), (x2, y2), (0, 255, 0), 2)
 
         cv2.rectangle(image, (x, y - size[1]), (x + size[0], y), (255, 0, 0), cv2.FILLED)
-        cv2.putText(image, label, (x, y), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+        cv2.putText(image, parent_data_name, (x, y), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 255), 2)
+
+    return parent_data_names
 
 def feature_compare(feature1, feature2, threshold):
     dist = np.sum(np.square(feature1 - feature2))
@@ -103,28 +109,44 @@ with tf.Graph().as_default():
                 self.recognition_thread = None
                 
                 self.face_detected = False #stop the infinite loop  
-                
+                            
             def load_faces(self, face_db_path):
-                image_files = os.listdir(face_db_path)
-                for file in image_files:
-                    image_path = os.path.join(face_db_path, file)
-                    if os.path.isfile(image_path):
-                        raw_image = cv2.imread(image_path)
-                        faces, landmarks = self.mtcnn_detector.detect(raw_image)
-                        if faces is not None and len(faces) > 0:
-                            # Assuming only one face per image in the database
-                            bbox = faces[0, 0:4]
-                            points = landmarks[0, :].reshape((5, 2))
-                            face_image = face_preprocess.preprocess(raw_image, bbox, points, image_size='112,112')
-                            face_image = face_image - 127.5
-                            face_image = face_image * 0.0078125
-                            embedding = self.sess.run(self.embeddings, feed_dict={self.inputs_placeholder: np.expand_dims(face_image, axis=0)})
-                            embedding = sklearn.preprocessing.normalize(embedding).flatten()
+                subset_embeddings = {}  # Dictionary to store embeddings by subset
+                subdatasets = os.listdir(face_db_path)
+                for subdataset in subdatasets:
+                    subdataset_path = os.path.join(face_db_path, subdataset)
+                    if os.path.isdir(subdataset_path):
+                        image_files = os.listdir(subdataset_path)
+                        for file in image_files:
+                            image_path = os.path.join(subdataset_path, file)
+                            if os.path.isfile(image_path):
+                                raw_image = cv2.imread(image_path)
+                                faces, landmarks = self.mtcnn_detector.detect(raw_image)
+                                if faces is not None and len(faces) > 0:
+                                    # Assuming only one face per image in the database
+                                    bbox = faces[0, 0:4]
+                                    points = landmarks[0, :].reshape((5, 2))
+                                    face_image = face_preprocess.preprocess(raw_image, bbox, points, image_size='112,112')
+                                    face_image = face_image - 127.5
+                                    face_image = face_image * 0.0078125
+                                    embedding = self.sess.run(self.embeddings, feed_dict={self.inputs_placeholder: np.expand_dims(face_image, axis=0)})
+                                    embedding = sklearn.preprocessing.normalize(embedding).flatten()
 
-                            # Get the name from the file name (remove the extension)
-                            name = os.path.splitext(file)[0]
-                            self.faces_db.append({"name": name, "feature": embedding})
-            
+                                    # Get the name from the file name (remove the extension and parent data name)
+                                    name = os.path.splitext(file)[0]
+                                    parent_data_name = os.path.basename(os.path.dirname(image_path))
+
+                                    # Store the embedding in the corresponding subset in the dictionary
+                                    if parent_data_name not in subset_embeddings:
+                                        subset_embeddings[parent_data_name] = []
+                                    subset_embeddings[parent_data_name].append({"name": name, "feature": embedding})
+
+                # Store the subset embeddings in the main faces_db list
+                for subset_name, embeddings_list in subset_embeddings.items():
+                    representative_embedding = np.mean([entry["feature"] for entry in embeddings_list], axis=0)
+                    representative_name = subset_name  # Use the subset name as the representative's name
+                    self.faces_db.append({"name": representative_name, "feature": representative_embedding})
+
             @pyqtSlot()
             def on_update_db(self):
                 print("Updating the database...")
@@ -137,6 +159,13 @@ with tf.Graph().as_default():
             
             def on_capture(self):
                 pass
+            
+            def get_parent_data_name(self, name):
+                employee_info = connect_DB.getEmployee(name)
+                if employee_info is not None and "parent_data_name" in employee_info:
+                    return employee_info["parent_data_name"]
+                else:
+                    return None
             
             def start_webcam(self):
                 self.load_faces(FACE_DB_PATH)
@@ -161,7 +190,6 @@ with tf.Graph().as_default():
                 image, faces, landmarks, face_names, sims = self.detect_known_faces(frame)
                 ids = face_names  # Store the recognized face names in the 'ids' list
 
-                # If no faces are detected, just display the frame without drawing anything
                 if faces is None or face_names is None or landmarks is None or sims is None:
                     rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                     h, w, ch = rgb_frame.shape
@@ -182,8 +210,8 @@ with tf.Graph().as_default():
 
                     size = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 1, 2)[0]
                     x, y = int(face_loc[0]), int(face_loc[1])  # Corrected variable name
-                    cv2.rectangle(frame, (x, y - size[1]), (x + size[0], y), (255, 0, 0), cv2.FILLED)  # Draw the rectangle on the original frame
-                    cv2.putText(frame, label, (x, y), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)  # Write the label on the original frame
+                    cv2.rectangle(frame, (x, y - size[1]), (x + size[0], y), (255, 167, 182), cv2.FILLED)  # Draw the rectangle on the original frame
+                    cv2.putText(frame, label, (x, y), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 255), 2)  # Write the label on the original frame
 
                     # Show information window for known faces with high similarity
                     if sim > VERIFICATION_THRESHOLD:
@@ -195,6 +223,7 @@ with tf.Graph().as_default():
                         self.confW.show()
                         self.confW.setNoti(check, qImg)
                         self.confW.autoStart.connect(self.timer.start)
+                        self.attendance(name)
 
                 # Convert frame to pixmap and set as label image
                 rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
@@ -256,6 +285,11 @@ with tf.Graph().as_default():
                             else:
                                 id = "unknown"
                                 sim = 0
+
+                        # Append the parent_data_name to the name if it's not "unknown"
+                        if id != "unknown":
+                            id = "{}".format(id, self.get_parent_data_name(id))
+
                         ids.append(id)
                         sims.append(sim)
 
@@ -286,12 +320,15 @@ with tf.Graph().as_default():
                 self.ui.image_label.setPixmap(QPixmap.fromImage(qImg))
                 # self.ui.image_label.setScaledContents(1)
                 return qImg
-
+            
             @pyqtSlot(str)
             def attendance(self, name):
                 with open('attendance.csv', 'r+') as f:
                     data = f.readlines()
-                    nameList = [entry.split(',')[0].strip() for entry in data]
+                    nameList = []
+                    for line in data:
+                        entry = line.split('-')
+                        nameList.append(entry[0])
                     if name not in nameList:
                         now = datetime.now()
                         dtString = now.strftime('%H:%M:%S')
@@ -340,20 +377,20 @@ with tf.Graph().as_default():
                 self.timer.timeout.connect(self.changeContent)
                 self.timer.start()
 
-                raw_image = cv2.imread(image_path)
-                if raw_image is None:
-                    print(f"Failed to load image at path: {image_path}")
-                    image = QPixmap()
-                else:
+                #raw_image = cv2.imread(image_path)
+                #if raw_image is None:
+                #    print(f"Failed to load image at path: {image_path}")
+                #    image = QPixmap()
+                #else:
                     # Convert the image to RGB channel order
-                    rgb_image = cv2.cvtColor(raw_image, cv2.COLOR_BGR2RGB)
-                    h, w, ch = rgb_image.shape
-                    print(f"Image dimensions: {h} x {w} x {ch}")
-                    bytesPerLine = ch * w
-                    qImg = QImage(rgb_image.data, w, h, bytesPerLine, QImage.Format_RGB888)
-                    image = QPixmap.fromImage(qImg)
+                #    rgb_image = cv2.cvtColor(raw_image, cv2.COLOR_BGR2RGB)
+                #    h, w, ch = rgb_image.shape
+                #    print(f"Image dimensions: {h} x {w} x {ch}")
+                #    bytesPerLine = ch * w
+                #    qImg = QImage(rgb_image.data, w, h, bytesPerLine, QImage.Format_RGB888)
+                #    image = QPixmap.fromImage(qImg)
 
-                self.imageLabel.setPixmap(image.scaled(self.imageLabel.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation))
+                #self.imageLabel.setPixmap(image.scaled(self.imageLabel.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation))
 
                 self.timeInLabel.setText(timeIn)
 
