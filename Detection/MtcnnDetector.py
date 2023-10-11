@@ -124,12 +124,16 @@ class MtcnnDetector(object):
         :param scale:
         :return: resized image
         '''
-        height, width, channels = img.shape
+        height, width = img.shape[:2]
         new_height = int(height * scale)  # resized new height
         new_width = int(width * scale)  # resized new width
         new_dim = (new_width, new_height)
         img_resized = cv2.resize(img, new_dim, interpolation=cv2.INTER_LINEAR)  # resized image
-        # don't understand this operation
+
+        # Convert grayscale to 3-channel
+        if len(img_resized.shape) == 2:
+            img_resized = np.stack([img_resized] * 3, axis=-1)
+
         img_resized = (img_resized - 127.5) / 128
         return img_resized
 
@@ -189,7 +193,7 @@ class MtcnnDetector(object):
     def detect_pnet(self, im):
         """Get face candidates through pnet
 
-        Parameters:
+        Parameters: 
         ----------
         im: numpy array
             input image array
@@ -201,6 +205,8 @@ class MtcnnDetector(object):
         boxes_c: numpy array
             boxes after calibration
         """
+        if len(im.shape) == 2:
+                im = cv2.cvtColor(im, cv2.COLOR_GRAY2BGR)
         h, w, c = im.shape
         net_size = 12
 
@@ -272,6 +278,8 @@ class MtcnnDetector(object):
         boxes_c: numpy array
             boxes after calibration
         """
+        if len(im.shape) == 2:
+            im = cv2.cvtColor(im, cv2.COLOR_GRAY2BGR)
         h, w, c = im.shape
         dets = self.convert_to_square(dets)
         dets[:, 0:4] = np.round(dets[:, 0:4])
@@ -319,6 +327,8 @@ class MtcnnDetector(object):
         boxes_c: numpy array
             boxes after calibration
         """
+        if len(im.shape) == 2:
+            im = cv2.cvtColor(im, cv2.COLOR_GRAY2BGR)
         h, w, c = im.shape
         dets = self.convert_to_square(dets)
         dets[:, 0:4] = np.round(dets[:, 0:4])

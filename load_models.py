@@ -7,9 +7,6 @@ from configparser import ConfigParser
 import sys
 sys.path.append('../')
 
-import cv2
-import numpy as np
-
 import tensorflow as tf
 import numpy as np
 import re
@@ -25,6 +22,8 @@ from Detection.detector import Detector
 from Detection.fcn_detector import FcnDetector
 
 def load_mtcnn(conf):
+    if not isinstance(conf, ConfigParser):
+        raise TypeError("Expected 'conf' to be an instance of ConfigParser, but got {}".format(type(conf)))
     # load mtcnn model
     MODEL_PATH = conf.get("MTCNN", "MODEL_PATH")
     MIN_FACE_SIZE = int(conf.get("MTCNN", "MIN_FACE_SIZE"))

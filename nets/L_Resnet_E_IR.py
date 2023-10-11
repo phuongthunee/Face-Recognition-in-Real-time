@@ -125,7 +125,7 @@ def batch_normalization(input, trainable, name, **kwargs):
 def convolution(input, group, shape, trainable, name, **kwargs):
     w = tf.compat.v1.get_variable(initializer=tf.random.truncated_normal(shape, stddev=0.1), trainable=trainable, name=name + "_weight")
     if group == 1:
-        layer = tf.nn.convolution(input, filters=pruning.apply_mask(w, name + "_weight"), **kwargs)
+        layer = tf.nn.convolution(input, filter=pruning.apply_mask(w, name + "_weight"), **kwargs)
     else:
         weight_groups = tf.split(w, num_or_size_splits=group, axis=-1)
         xs = tf.split(input, num_or_size_splits=group, axis=-1)
