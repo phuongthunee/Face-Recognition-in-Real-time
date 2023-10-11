@@ -4,20 +4,21 @@ import os
 import tensorflow as tf
 import numpy as np
 import re
+import csv
 import sklearn
 from datetime import datetime
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtCore import pyqtSlot, pyqtSignal, QTimer, QDate, QTime, Qt
-from PyQt5.QtWidgets import QApplication, QWidget
+from PyQt5.QtWidgets import QApplication, QWidget, QMessageBox
 from PyQt5.QtGui import QPixmap, QImage
 from GUI.main import Ui_FaceRecognition
 from GUI.information import Ui_Information
+from GUI.viewattendance import Ui_Attendance
 
 from utils import face_preprocess
 from load_models import load_mtcnn, load_mobilefacenet
 import connect_DB
 
-# sys.path.append('../')
 sys.path.append('C:/Users/lephu/OneDrive/Desktop/Face-Recognition-in-Real-time/')
 
 sys.path.append('C:/Users/lephu/OneDrive/Desktop/Face-Recognition-in-Real-time/GUI/')
@@ -65,9 +66,18 @@ def feature_compare(feature1, feature2, threshold):
     else:
         return False, sim
 
+def load_data_from_csv(filename):
+    data = []
+    with open(filename, 'r') as csvfile:
+        csvreader = csv.reader(csvfile)
+        headers = next(csvreader)  # Skip header row
+        for row in csvreader:
+            data.append(row)
+    return data
+
 with tf.Graph().as_default():
     with tf.compat.v1.Session() as sess:
-        
+                
         class FaceRecognition(QWidget, Ui_FaceRecognition):
             #accept = pyqtSignal()
             def __init__(self):
@@ -109,6 +119,10 @@ with tf.Graph().as_default():
                 self.recognition_thread = None
                 
                 self.face_detected = False #stop the infinite loop  
+                
+                self.ui.view.clicked.connect(self.show_attendance_history)
+                self.check_in_times = {}
+
                             
             def load_faces(self, face_db_path):
                 subset_embeddings = {}  # Dictionary to store embeddings by subset
@@ -218,12 +232,12 @@ with tf.Graph().as_default():
                         check = {'name': name, 'acc': sim, 'time': datetime.now()}
                         image_path = f"images/{check['name']}.jpg"  # Assuming the image file path is in the 'images' folder
                         qImg = self.displayImage(frame, h, w)  # Assign qImg here
-                        self.confW = Information(check['name'], image_path, check['time'].strftime('%H:%M:%S'))
+                        self.confW = Information(check['name'], image_path, check['time'].strftime('%H:%M:%S'), parent=self)
                         self.timer.stop()
                         self.confW.show()
                         self.confW.setNoti(check, qImg)
                         self.confW.autoStart.connect(self.timer.start)
-                        self.attendance(name)
+                        #self.attendance(name)
 
                 # Convert frame to pixmap and set as label image
                 rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
@@ -302,7 +316,6 @@ with tf.Graph().as_default():
             #    frame = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
             #    qImg = QImage(frame.data, w, h, frame.strides[0], QImage.Format_RGB888)
             #    return qImg
-            
             def displayImage(self, img, h, w):
                 height = int(self.h / 2)
                 width =int(self.w / 2)
@@ -321,18 +334,18 @@ with tf.Graph().as_default():
                 # self.ui.image_label.setScaledContents(1)
                 return qImg
             
-            @pyqtSlot(str)
-            def attendance(self, name):
-                with open('attendance.csv', 'r+') as f:
-                    data = f.readlines()
-                    nameList = []
-                    for line in data:
-                        entry = line.split('-')
-                        nameList.append(entry[0])
-                    if name not in nameList:
-                        now = datetime.now()
-                        dtString = now.strftime('%H:%M:%S')
-                        f.writelines(f'\n{name}, {dtString}')
+            #@pyqtSlot(str)
+            #def attendance(self, name):
+            #    with open('attendance.csv', 'r+') as f:
+            #        data = f.readlines()
+            #        nameList = []
+            #        for line in data:
+            #            entry = line.split('-')
+            #            nameList.append(entry[0])
+            #        if name not in nameList:
+            #            now = datetime.now()
+            #            dtString = now.strftime('%H:%M:%S')
+            #            f.writelines(f'\n{name}, {dtString}')
 
             @pyqtSlot() 
             def update_time(self):
@@ -359,40 +372,111 @@ with tf.Graph().as_default():
                 self.info_window.close()  # Close the Information window
                 self.timer.start()
                     
+            def show_attendance_history(self):
+                self.attendance_history_window = AttendanceHistory()
+                self.attendance_history_window.show()
+        
         class Information(QWidget, Ui_Information):
             autoRecord = pyqtSignal()
             autoStart = pyqtSignal()
             returnToIdentification = pyqtSignal()
 
-            def __init__(self, name, image_path, timeIn, timeout=5):
+            def __init__(self, name, image_path, timeIn, timeout=5, parent=None):
                 super(Information, self).__init__()
                 self.setupUi(self)
                 self.nameLabel.setText(str(name))
 
                 self.close_bt.clicked.connect(self.acceptContent)
-                self.return_bt.clicked.connect(self.declineContent)
                 self.time_to_wait = timeout
                 self.timer = QtCore.QTimer(self)
                 self.timer.setInterval(1000)
                 self.timer.timeout.connect(self.changeContent)
                 self.timer.start()
-
-                #raw_image = cv2.imread(image_path)
-                #if raw_image is None:
-                #    print(f"Failed to load image at path: {image_path}")
-                #    image = QPixmap()
-                #else:
-                    # Convert the image to RGB channel order
-                #    rgb_image = cv2.cvtColor(raw_image, cv2.COLOR_BGR2RGB)
-                #    h, w, ch = rgb_image.shape
-                #    print(f"Image dimensions: {h} x {w} x {ch}")
-                #    bytesPerLine = ch * w
-                #    qImg = QImage(rgb_image.data, w, h, bytesPerLine, QImage.Format_RGB888)
-                #    image = QPixmap.fromImage(qImg)
-
-                #self.imageLabel.setPixmap(image.scaled(self.imageLabel.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation))
+                
+                self.check_bt.clicked.connect(self.save_attendance)
+                self.checkout_bt.clicked.connect(self.checkout)
+                self.parent = parent
+                if name in self.parent.check_in_times:
+                    self.checkout_bt.setEnabled(True)
+                else:
+                    self.checkout_bt.setEnabled(False)
 
                 self.timeInLabel.setText(timeIn)
+                
+            def save_attendance(self):
+                name = self.nameLabel.text()
+                timeIn = self.timeInLabel.text()
+                filename = 'attendance.csv'
+                headers = ["Name", "Time", "Date", "Action", "Duration"]
+
+                # Check if file exists and has content
+                file_exists = os.path.isfile(filename)
+                if not file_exists or os.stat(filename).st_size == 0:
+                    with open(filename, 'w', newline='') as f:
+                        writer = csv.writer(f)
+                        writer.writerow(headers)
+
+                # If the person has not checked in yet, check them in
+                if self.nameLabel.text() not in self.parent.check_in_times:
+                    self.parent.check_in_times[self.nameLabel.text()] = datetime.now()
+                    action = "Check In"
+                    duration = ""
+
+                    with open(filename, 'a', newline='') as f:
+                        writer = csv.writer(f)
+                        writer.writerow([name, timeIn, datetime.now().date(), action, duration])
+
+                    # Display the notification
+                    msg = QMessageBox()
+                    msg.setIcon(QMessageBox.Information)
+                    msg.setText("Check In - DONE!")
+                    msg.setWindowTitle("Notification")
+                    msg.exec_()
+
+                    # Close the information window
+                    self.close()
+                else:
+                    # Person is already checked in; display a message box
+                    msg = QMessageBox()
+                    msg.setIcon(QMessageBox.Warning)
+                    msg.setText("You are already checked in. Please check out first!")
+                    msg.setWindowTitle("Warning")
+                    msg.exec_()
+    
+            def checkout(self):
+                if self.nameLabel.text() in self.parent.check_in_times:
+                    check_in_time = self.parent.check_in_times.pop(self.nameLabel.text())
+                    duration = datetime.now() - check_in_time
+                    # Display the duration on the screen
+                    self.timeInLabel.setText(f"Duration: {duration}")
+
+                    # Save the "Check Out" action and the duration to the CSV file
+                    name = self.nameLabel.text()
+                    timeOut = datetime.now().strftime('%H:%M:%S')
+                    filename = 'attendance.csv'
+                    action = "Check Out"
+                    duration_str = str(duration)
+
+                    with open(filename, 'a', newline='') as f:
+                        writer = csv.writer(f)
+                        writer.writerow([name, timeOut, datetime.now().date(), action, duration_str])
+                        
+                    # Display the notification
+                    msg = QMessageBox()
+                    msg.setIcon(QMessageBox.Information)
+                    msg.setText("Check Out - DONE!")
+                    msg.setWindowTitle("Notification")
+                    msg.exec_()
+
+                    # Close the information window
+                    self.close()
+                else:
+                    # Person has not checked in yet; display a message box
+                    msg = QMessageBox()
+                    msg.setIcon(QMessageBox.Warning)
+                    msg.setText("Please check in first before checking out!")
+                    msg.setWindowTitle("Warning")
+                    msg.exec_()
 
             def setNoti(self, check, qImg):
                 self.imageLabel.setPixmap(QPixmap.fromImage(qImg))
@@ -413,7 +497,8 @@ with tf.Graph().as_default():
                 self.autoRecord.emit()
                 self.autoStart.emit()
                 self.timer.stop()
-
+                self.close()
+            
             def declineContent(self):
                 self.close()
                 self.autoStart.emit()
@@ -428,6 +513,26 @@ with tf.Graph().as_default():
                 self.timeInLabel.setText(text)
                 self.timeInLabel.setWordWrap(True)
                 self.timeInLabel.setText('\u200b'.join(text))
+                
+        class AttendanceHistory(QtWidgets.QWidget, Ui_Attendance):
+            def __init__(self):
+                super(AttendanceHistory, self).__init__()
+                self.setupUi(self)
+                self.load_attendance()
+
+            def load_attendance(self):
+                data = load_data_from_csv('attendance.csv')
+
+                self.tableWidget.setRowCount(len(data))
+                self.tableWidget.setColumnCount(5)
+                self.tableWidget.setHorizontalHeaderLabels(["Name", "Time", "Date", "Action", "Duration"])
+
+                for row, record in enumerate(data):
+                    for col, item in enumerate(record):
+                        cell = QtWidgets.QTableWidgetItem(str(item))
+                        self.tableWidget.setItem(row, col, cell)
+                self.tableWidget.resizeColumnsToContents()
+
                         
 if __name__ == "__main__":
     app = QApplication(sys.argv)

@@ -14,63 +14,61 @@ class Ui_FaceRecognition(object):
         FaceRecognition.setWindowModality(QtCore.Qt.NonModal)
         FaceRecognition.setEnabled(True)
         FaceRecognition.resize(532, 377)
-        self.horizontalLayout = QtWidgets.QHBoxLayout(FaceRecognition)
-        self.horizontalLayout.setObjectName("horizontalLayout")
-        self.gridLayout = QtWidgets.QGridLayout()
-        self.gridLayout.setObjectName("gridLayout")
+        self.mainLayout = QtWidgets.QVBoxLayout(FaceRecognition)
+        self.mainLayout.setObjectName("mainLayout")
         self.hzTimeLayout = QtWidgets.QHBoxLayout()
         self.hzTimeLayout.setObjectName("hzTimeLayout")
-        self.gridLayout_2 = QtWidgets.QGridLayout()
-        self.gridLayout_2.setObjectName("gridLayout_2")
-        self.horizontalLayout_2 = QtWidgets.QHBoxLayout()
-        self.horizontalLayout_2.setObjectName("horizontalLayout_2")
         self.date = QtWidgets.QLabel(FaceRecognition)
         font = QtGui.QFont()
-        font.setFamily("STXinwei")
-        font.setPointSize(14)
+        font.setFamily("Segoe UI")
+        font.setPointSize(12)
         self.date.setFont(font)
         self.date.setObjectName("date")
-        self.horizontalLayout_2.addWidget(self.date)
+        self.hzTimeLayout.addWidget(self.date)
         self.dateLabel = QtWidgets.QLabel(FaceRecognition)
         font = QtGui.QFont()
-        font.setFamily("STXinwei")
-        font.setPointSize(14)
+        font.setFamily("Segoe UI")
+        font.setPointSize(12)
         self.dateLabel.setFont(font)
         self.dateLabel.setText("")
         self.dateLabel.setObjectName("dateLabel")
-        self.horizontalLayout_2.addWidget(self.dateLabel)
-        self.gridLayout_2.addLayout(self.horizontalLayout_2, 0, 0, 1, 1)
-        self.horizontalLayout_3 = QtWidgets.QHBoxLayout()
-        self.horizontalLayout_3.setObjectName("horizontalLayout_3")
+        self.hzTimeLayout.addWidget(self.dateLabel)
+        spacerItem = QtWidgets.QSpacerItem(20, 20, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
+        self.hzTimeLayout.addItem(spacerItem)
         self.time = QtWidgets.QLabel(FaceRecognition)
         font = QtGui.QFont()
-        font.setFamily("STXinwei")
-        font.setPointSize(14)
+        font.setFamily("Segoe UI")
+        font.setPointSize(12)
         self.time.setFont(font)
         self.time.setObjectName("time")
-        self.horizontalLayout_3.addWidget(self.time)
+        self.hzTimeLayout.addWidget(self.time)
         self.timeLabel = QtWidgets.QLabel(FaceRecognition)
         font = QtGui.QFont()
-        font.setFamily("STXinwei")
-        font.setPointSize(14)
+        font.setFamily("Segoe UI")
+        font.setPointSize(12)
         self.timeLabel.setFont(font)
         self.timeLabel.setText("")
         self.timeLabel.setObjectName("timeLabel")
-        self.horizontalLayout_3.addWidget(self.timeLabel)
-        self.gridLayout_2.addLayout(self.horizontalLayout_3, 1, 0, 1, 1)
-        self.hzTimeLayout.addLayout(self.gridLayout_2)
-        self.gridLayout.addLayout(self.hzTimeLayout, 0, 0, 1, 1)
+        self.hzTimeLayout.addWidget(self.timeLabel)
+        self.mainLayout.addLayout(self.hzTimeLayout)
+        spacerItem1 = QtWidgets.QSpacerItem(20, 10, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Fixed)
+        self.mainLayout.addItem(spacerItem1)
         self.image_label = QtWidgets.QLabel(FaceRecognition)
-        self.image_label.setEnabled(True)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Maximum, QtWidgets.QSizePolicy.Preferred)
-        sizePolicy.setHorizontalStretch(0)
-        sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.image_label.sizePolicy().hasHeightForWidth())
-        self.image_label.setSizePolicy(sizePolicy)
         self.image_label.setAlignment(QtCore.Qt.AlignCenter)
         self.image_label.setObjectName("image_label")
-        self.gridLayout.addWidget(self.image_label, 1, 0, 1, 1)
-        self.horizontalLayout.addLayout(self.gridLayout)
+        self.mainLayout.addWidget(self.image_label)
+        spacerItem2 = QtWidgets.QSpacerItem(20, 10, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Fixed)
+        self.mainLayout.addItem(spacerItem2)
+        self.hboxlayout = QtWidgets.QHBoxLayout()
+        self.hboxlayout.setObjectName("hboxlayout")
+        spacerItem3 = QtWidgets.QSpacerItem(20, 20, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
+        self.hboxlayout.addItem(spacerItem3)
+        self.view = QtWidgets.QPushButton(FaceRecognition)
+        self.view.setObjectName("view")
+        self.hboxlayout.addWidget(self.view)
+        spacerItem4 = QtWidgets.QSpacerItem(150, 50, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
+        self.hboxlayout.addItem(spacerItem4)
+        self.mainLayout.addLayout(self.hboxlayout)
 
         self.retranslateUi(FaceRecognition)
         QtCore.QMetaObject.connectSlotsByName(FaceRecognition)
@@ -78,9 +76,33 @@ class Ui_FaceRecognition(object):
     def retranslateUi(self, FaceRecognition):
         _translate = QtCore.QCoreApplication.translate
         FaceRecognition.setWindowTitle(_translate("FaceRecognition", "Facial Recognition Attendance System"))
+        FaceRecognition.setStyleSheet(_translate("FaceRecognition", "\n"
+"    QWidget {\n"
+"            background-color: #ebffeb;  \n"
+"        }\n"
+"        QLabel {\n"
+"            color: #333333;\n"
+"        }\n"
+"        QLabel#image_label {\n"
+"            border: 3px solid #006400;  \n"
+"            background-color: #ebffeb;  \n"
+"        }\n"
+"        QPushButton {\n"
+"            background-color: #006400;\n"
+"            color: white;\n"
+"            border-radius: 10px;  \n"
+"            padding: 15px 30px;  \n"
+"            font-size: 18px;  \n"
+"            font-weight: bold;  \n"
+"        }\n"
+"        QPushButton:hover {\n"
+"            background-color: #006400;\n"
+"        }\n"
+"   "))
         self.date.setText(_translate("FaceRecognition", "Date:"))
         self.time.setText(_translate("FaceRecognition", "Time:"))
         self.image_label.setText(_translate("FaceRecognition", "Camera"))
+        self.view.setText(_translate("FaceRecognition", "View Attendance"))
 
 
 if __name__ == "__main__":
